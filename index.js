@@ -3,7 +3,7 @@ const path = require('path');
 const fetch = require('node-fetch');
 const translate = require('node-google-translate-skidz');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000; // Cambiado para Vercel
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
