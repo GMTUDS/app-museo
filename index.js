@@ -22,8 +22,8 @@ app.post('/translate-card', async (req, res) => {
             translatedDynasty: translatedDynasty.translation
         });
     } catch (error) {
-        console.error('Error al traducir las propiedades de las cards:', error);
-        res.status(500).json({ error: 'Error al traducir las propiedades de las cards' });
+        console.error('Error al traducir atribtos de las obras:', error);
+        res.status(500).json({ error: 'Error al traducir atribtos de las obras' });
     }
 });
 
