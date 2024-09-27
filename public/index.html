@@ -31,13 +31,39 @@
                         
                     </select>
                 </div>
-                <button type="submit">Buscar</button>
+                <button type="submit" id="buscarBtn">Buscar</button>
             </form>
+        </div>
+        <div id="grilla">
+            <div class="objeto">
+                <img src="" alt="">
+                <h4 class="titulo">Titulo</h4>
+                <h6 class="cultura">Cultura</h6>
+                <h6 class="Dinastia">Dinastia</h6>
+            </div>
         </div>
         <div id="paginacion">
 
         </div>
        
+    </div>
+    <div id="imageModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Imágenes Adicionales</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="modalImageContainer" class="d-flex flex-wrap"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 </html>
