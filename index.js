@@ -1,16 +1,39 @@
 const express = require('express');
 const path = require('path');
-const translate = require('node-google-translate-skidz'); // Importa el paquete de traducción
+const fetch = require('node-fetch');
+const translate = require('node-google-translate-skidz');
 const app = express();
 const port = 3000;
 
-app.use(express.json()); // Middleware para parsear JSON
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.post('/api/search', async (req, res) => {
+    const { departamento, keyword, localizacion } = req.body;
+
+    let url = 'https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true';
+    url += keyword ? `&q=${keyword}` : '&q=""';
+    if (departamento) url += `&departmentId=${departamento}`;
+    if (localizacion) url += `&geoLocation=${localizacion}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        res.json(data);
+    } catch (error) {
+        console.error('Error en la búsqueda:', error);
+        res.status(500).json({ error: 'Error al realizar la búsqueda' });
+    }
+});
 
 // Ruta para traducir propiedades de las cards
 app.post('/translate-card', async (req, res) => {
     const { title, culture, dynasty } = req.body;
-    console.log('Recibiendo datos para traducir:', title, culture, dynasty);
-    
+
     try {
         const translatedTitle = await translate({ text: title, source: 'en', target: 'es' });
         const translatedCulture = await translate({ text: culture, source: 'en', target: 'es' });
@@ -22,25 +45,11 @@ app.post('/translate-card', async (req, res) => {
             translatedDynasty: translatedDynasty.translation
         });
     } catch (error) {
-        console.error('Error al traducir atribtos de las obras:', error);
-        res.status(500).json({ error: 'Error al traducir atribtos de las obras' });
+        console.error('Error al traducir atributos de las obras:', error);
+        res.status(500).json({ error: 'Error al traducir atributos de las obras' });
     }
 });
 
-// Servir archivos estáticos
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Enviar el archivo HTML al acceder a la raíz
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Manejar la ruta para el archivo JS de la API
-app.get('/scripts.js', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'scripts.js'));
-});
-
-// Configurar un puerto para la aplicación
 app.listen(port, () => {
     console.log(`Servidor escuchando en el puerto ${port}`);
 });

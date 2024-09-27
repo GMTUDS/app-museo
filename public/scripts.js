@@ -1,61 +1,106 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.querySelector('#buscador form');
-    const grilla = document.getElementById('grilla');
-    const paginacion = document.getElementById('paginacion');
-    const loader = document.createElement('div'); // Crear indicador de carga
-    loader.textContent = 'Cargando...';
-    loader.style.display = 'none';
-    document.body.appendChild(loader);
-
+    const form = document.getElementById('filterForm');
+    const gallery = document.getElementById('gallery');
+    const pagination = document.getElementById('pagination');
+    const loader = document.getElementById('loader');
     let currentPage = 1;
     const resultsPerPage = 20;
-    const maxPages = 10; // Limitar a 10 páginas
+    const maxPages = 10;
 
-    // Cargar opciones de departamentos
+    form.reset();
+
     fetch('https://collectionapi.metmuseum.org/public/collection/v1/departments')
-    .then(response => response.json())
-    .then(data => {
-        const departmentSelect = document.getElementById('departamento');
-        
-        // Añadir la opción por defecto
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = 'Seleccione un departamento';
-        departmentSelect.appendChild(defaultOption);
-
-        // Agregar las opciones de departamento
-        data.departments.forEach(department => {
-            const option = document.createElement('option');
-            option.value = department.departmentId;
-            option.textContent = department.displayName; // o el nombre que desees mostrar
-            departmentSelect.appendChild(option);
+        .then(response => response.json())
+        .then(data => {
+            const departmentSelect = document.getElementById('department');
+            data.departments.forEach(department => {
+                const option = document.createElement('option');
+                option.value = department.departmentId;
+                option.textContent = departmentTranslations[department.displayName] || department.displayName;
+                departmentSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching departments:', error);
+            const departmentSelect = document.getElementById('department');
+            departmentSelect.innerHTML = '<option>Error al cargar departamentos</option>';
         });
-    })
-    .catch(error => {
-        console.error('Error fetching departments:', error);
-    });
+
+    const departmentTranslations = {
+        "American Decorative Arts": "Artes Decorativas Americanas",
+        "Ancient Near Eastern Art": "Arte del Cercano Oriente Antiguo",
+        "Arms and Armor": "Armas y Armaduras",
+        "Arts of Africa, Oceania, and the Americas": "Artes de África, Oceanía y las Américas",
+        "Asian Art": "Arte Asiático",
+        "The Costume Institute": "El Instituto del Vestido",
+        "Drawings and Prints": "Dibujos y Grabados",
+        "Egyptian Art": "Arte Egipcio",
+        "European Paintings": "Pinturas Europeas",
+        "European Sculpture and Decorative Arts": "Escultura y Artes Decorativas Europeas",
+        "Greek and Roman Art": "Arte Griego y Romano",
+        "Islamic Art": "Arte Islámico",
+        "The Robert Lehman Collection": "La Colección Robert Lehman",
+        "The Libraries": "Las Bibliotecas",
+        "Medieval Art": "Arte Medieval",
+        "Musical Instruments": "Instrumentos Musicales",
+        "Photographs": "Fotografías",
+        "Modern Art": "Arte Moderno"
+    };
+
+    const savedDepartment = localStorage.getItem('department');
+    const savedKeyword = localStorage.getItem('keyword');
+    const savedLocation = localStorage.getItem('location');
+    const savedPage = localStorage.getItem('currentPage');
+
+    if (savedDepartment) document.getElementById('department').value = savedDepartment;
+    if (savedKeyword) document.getElementById('keyword').value = savedKeyword;
+    if (savedLocation) document.getElementById('location').value = savedLocation;
+    if (savedPage) currentPage = parseInt(savedPage, 10);
+
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        currentPage = 1; // Restablecer a la primera página en una nueva búsqueda
+
+        const department = document.getElementById('department').value;
+        const keyword = document.getElementById('keyword').value;
+        const location = document.getElementById('location').value;
+
+        if (!department && !keyword && !location) {
+            alert('Por favor, complete algún parámetro de la búsqueda.');
+            document.getElementById('keyword').focus();
+            return;
+        }
+
+        currentPage = 1;
+        localStorage.setItem('currentPage', currentPage);
         await fetchResults();
     });
 
     async function fetchResults() {
-        grilla.innerHTML = '';
-        paginacion.innerHTML = ''; // Limpiar paginación antes de agregar nuevos botones
-        loader.style.display = 'block'; // Mostrar indicador de carga
+        gallery.innerHTML = '';
+        pagination.innerHTML = '';
+        loader.style.display = 'block';
+        const processedTitles = new Set();
 
-        const departamento = document.getElementById('departamento').value;
+        const department = document.getElementById('department').value;
         const keyword = document.getElementById('keyword').value;
-        const localizacion = document.getElementById('localizacion').value;
+        const location = document.getElementById('location').value;
 
-        let url = 'https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true';
-        url += keyword ? `&q=${keyword}` : '&q=""';
-        if (departamento) url += `&departmentId=${departamento}`;
-        if (localizacion) url += `&geoLocation=${localizacion}`;
+        localStorage.setItem('department', department);
+        localStorage.setItem('keyword', keyword);
+        localStorage.setItem('location', location);
 
         try {
-            const response = await fetch(url);
+            const response = await fetch('/api/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    departamento: department,
+                    keyword: keyword,
+                    localizacion: location,
+                }),
+            });
             const data = await response.json();
 
             if (data.objectIDs) {
@@ -70,56 +115,90 @@ document.addEventListener('DOMContentLoaded', () => {
                         const objectResponse = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`);
                         const objectData = await objectResponse.json();
 
-                        if (objectData.primaryImageSmall) {
+                        if (objectData.primaryImageSmall && !processedTitles.has(objectData.title)) {
+                            const title = objectData.title;
+                            const culture = objectData.culture || 'N/A';
+                            const dynasty = objectData.dynasty || 'N/A';
+
+                            processedTitles.add(title);
+
+                            // Realizar la traducción antes de crear la tarjeta
+                            const translatedData = await translateCard(title, culture, dynasty);
+
                             const card = document.createElement('div');
-                            card.classList.add('objeto');
+                            card.classList.add('card', 'col-md-3');
 
                             const img = document.createElement('img');
                             img.src = objectData.primaryImageSmall;
-                            img.alt = objectData.title;
+                            img.alt = translatedData.translatedTitle;
+                            img.classList.add('card-img-top');
+                            img.title = `Fecha de creación: ${objectData.objectDate || 'Desconocida'}`;
 
-                            const title = document.createElement('h4');
-                            title.classList.add('titulo');
-                            title.textContent = objectData.title;
+                            const cardBody = document.createElement('div');
+                            cardBody.classList.add('card-body');
 
-                            const culture = document.createElement('h6');
-                            culture.classList.add('cultura');
-                            culture.textContent = `Cultura: ${objectData.culture || 'N/A'}`;
+                            const cardTitle = document.createElement('h5');
+                            cardTitle.classList.add('card-title');
+                            cardTitle.textContent = translatedData.translatedTitle;
 
-                            const dynasty = document.createElement('h6');
-                            dynasty.classList.add('dinastia');
-                            dynasty.textContent = `Dinastía: ${objectData.dynasty || 'N/A'}`;
+                            const cardText = document.createElement('p');
+                            cardText.classList.add('card-text');
+                            cardText.innerHTML = `
+                                <strong>Cultura:</strong> ${translatedData.translatedCulture}<br>
+                                <strong>Dinastía:</strong> ${translatedData.translatedDynasty}
+                            `;
 
+                            cardBody.appendChild(cardTitle);
+                            cardBody.appendChild(cardText);
                             card.appendChild(img);
-                            card.appendChild(title);
-                            card.appendChild(culture);
-                            card.appendChild(dynasty);
-                            grilla.appendChild(card);
+                            card.appendChild(cardBody);
+                            gallery.appendChild(card);
                         }
                     } catch (error) {
-                        console.error(`Error fetching object data for ID ${id}:`, error);
+                        console.error('Error fetching object data:', error);
                     }
                 }
 
-                // Agregar botones de paginación
                 for (let i = 1; i <= totalPages; i++) {
                     const button = document.createElement('button');
                     button.textContent = i;
                     button.classList.add('pagination-button');
-                    button.addEventListener('click', async () => {
+                    button.addEventListener('click', () => {
                         currentPage = i;
-                        await fetchResults();
+                        localStorage.setItem('currentPage', currentPage);
+                        fetchResults();
                     });
-                    paginacion.appendChild(button);
+                    pagination.appendChild(button);
                 }
             } else {
-                grilla.innerHTML = '<p>No se encontraron resultados.</p>';
+                gallery.innerHTML = '<p>No se encontraron resultados.</p>';
             }
         } catch (error) {
             console.error('Error fetching search results:', error);
-            grilla.innerHTML = '<p>Hubo un error al recuperar los resultados. Por favor, inténtelo de nuevo más tarde.</p>';
+            gallery.innerHTML = '<p>Error al buscar resultados. Intente nuevamente.</p>';
         } finally {
-            loader.style.display = 'none'; // Ocultar indicador de carga
+            loader.style.display = 'none';
+        }
+    }
+
+    // Función para traducir los atributos
+    async function translateCard(title, culture, dynasty) {
+        try {
+            const response = await fetch('/translate-card', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title, culture, dynasty }),
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Error al traducir atributos:', error);
+            return {
+                translatedTitle: title,
+                translatedCulture: culture,
+                translatedDynasty: dynasty
+            };
         }
     }
 });

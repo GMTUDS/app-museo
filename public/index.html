@@ -4,70 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Museo Metropolitano de NY</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="scripts.js" defer></script>
-   
+    <style>
+        /* Estilos adicionales */
+        body {
+            background-image: url('imagen_fondo.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #2a2828;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .card {
+            background-color: rgba(0, 0, 0, 0.0);
+            border: none;
+        }
+        #loader {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        
-        <div id="buscador">
-            <form action="" method="post">
-                <div class="input">
-                    <label for="departamento">Departamento</label>
-                    <select name="departamento" id="departamento"></select>
-                </div>
-                <div class="input">
-                    <label for="keyword">Palabra Clave</label>
-                    <input type="text" name="keyword" id="keyword"></imput>
-                </div>
-                <div class="input">
-                    <label for="localizacion">Localizacion</label>
-                    <select name="localizacion" id="localizacion"> 
-                        <option value="">Selecione una Localizacion</option>                     
-                        <option value="China">China</option>
-                        <option value="Paris">Paris</option>
-                        <option value="Nueva York">Nueva York</option>
-                        <option value="Italia">Italia</option>
-                        <option value="Francia">Francia</option>
-                        <option value="Alemania">Alemania</option>
-                        <option value="Grecia">Grecia</option>
-                        
-                    </select>
-                </div>
-                <button type="submit" id="buscarBtn">Buscar</button>
-            </form>
-        </div>
-        <div id="grilla">
-            <div class="objeto">
-                <img src="" alt="">
-                <h4 class="titulo">Titulo</h4>
-                <h6 class="cultura">Cultura</h6>
-                <h6 class="Dinastia">Dinastia</h6>
+        <form id="filterForm" class="p-3">
+            <div class="form-group">
+                <label for="keyword">Palabra clave</label>
+                <input type="text" id="keyword" class="form-control form-control-sm">
             </div>
-        </div>
-        <div id="paginacion">
-
-        </div>
-       
-    </div>
-    <div id="imageModal" class="modal" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Imágenes Adicionales</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div id="modalImageContainer" class="d-flex flex-wrap"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                </div>
+            <div class="form-group">
+                <label for="department">Departamento</label>
+                <select id="department" class="form-control form-control-sm">
+                    <option value="" selected>Seleccione un departamento</option>
+                </select>
             </div>
-        </div>
+            <div class="form-group">
+                <label for="location">Ubicación</label>
+                <select id="location" class="form-control form-control-sm">
+                    <option value="">Elija una opción</option>
+                    <option value="France">Francia</option>
+                    <option value="China">China</option>
+                    <option value="Italy">Italia</option>
+                    <option value="Japan">Japón</option>
+                    <!-- Más opciones aquí -->
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
+        </form>
+        <div id="loader">Cargando...</div>
+        <div id="gallery" class="row"></div>
+        <div id="pagination" class="d-flex justify-content-center"></div>
     </div>
 </body>
 </html>
