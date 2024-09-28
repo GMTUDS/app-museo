@@ -114,45 +114,55 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         const objectResponse = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`);
                         const objectData = await objectResponse.json();
-
+            
                         if (objectData.primaryImageSmall && !processedTitles.has(objectData.title)) {
                             const title = objectData.title;
                             const culture = objectData.culture || 'N/A';
                             const dynasty = objectData.dynasty || 'N/A';
-
+                            const date = objectData.objectDate || 'Desconocida';
+            
                             processedTitles.add(title);
-
+            
                             // Realizar la traducción antes de crear la tarjeta
                             const translatedData = await translateCard(title, culture, dynasty);
-
+            
                             const card = document.createElement('div');
                             card.classList.add('card', 'col-md-3');
-
+            
                             const img = document.createElement('img');
                             img.src = objectData.primaryImageSmall;
                             img.alt = translatedData.translatedTitle;
                             img.classList.add('card-img-top');
-                            img.title = `Fecha de creación: ${objectData.objectDate || 'Desconocida'}`;
-
+                            img.title = `Fecha de creación: ${date}`; // Muestra la fecha al pasar el mouse
+            
                             const cardBody = document.createElement('div');
                             cardBody.classList.add('card-body');
-
+            
                             const cardTitle = document.createElement('h5');
                             cardTitle.classList.add('card-title');
                             cardTitle.textContent = translatedData.translatedTitle;
-
+            
                             const cardText = document.createElement('p');
                             cardText.classList.add('card-text');
                             cardText.innerHTML = `
                                 <strong>Cultura:</strong> ${translatedData.translatedCulture}<br>
                                 <strong>Dinastía:</strong> ${translatedData.translatedDynasty}
                             `;
-
+            
                             cardBody.appendChild(cardTitle);
                             cardBody.appendChild(cardText);
                             card.appendChild(img);
                             card.appendChild(cardBody);
                             gallery.appendChild(card);
+            
+                            // Si hay imágenes adicionales, agregar botón
+                            if (objectData.additionalImages && objectData.additionalImages.length > 0) {
+                                const button = document.createElement('button');
+                                button.classList.add('btn', 'btn-info', 'btn-sm');
+                                button.textContent = 'Ver Imágenes Adicionales';
+                                button.onclick = () => showAdditionalImages(objectData.additionalImages);
+                                cardBody.appendChild(button);
+                            }
                         }
                     } catch (error) {
                         console.error('Error fetching object data:', error);
@@ -179,6 +189,20 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             loader.style.display = 'none';
         }
+    }
+    function showAdditionalImages(images) {
+        const modalBody = document.getElementById('modalBody');
+        modalBody.innerHTML = ''; // Limpiar contenido previo
+
+        images.forEach(image => {
+            const img = document.createElement('img');
+            img.src = image;
+            img.alt = 'Imagen adicional';
+            img.classList.add('img-fluid', 'mb-2'); // Clases de Bootstrap para el estilo
+            modalBody.appendChild(img);
+        });
+
+        $('#imageModal').modal('show'); // Mostrar el modal usando jQuery
     }
 
     // Función para traducir los atributos
